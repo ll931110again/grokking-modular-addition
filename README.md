@@ -6,7 +6,7 @@ Small PyTorch demos of **delayed generalization (“grokking”)** on toy algori
 
 **Grokking** is the pattern where a network first **fits the training set** (often with near-perfect training accuracy) while **validation / test performance stays poor**—as if it were memorizing—then, after **many more training steps**, **generalization suddenly improves** sharply. It was popularized on small modular tasks (e.g. [Power et al., *Grokking*](https://arxiv.org/abs/2201.02177)).
 
-Here one task is **modular addition**: predict \((a + b) \bmod p\) for all pairs \((a,b)\) with a held-out random fraction of pairs for validation. With **weight decay** and long training, you typically see train accuracy climb first and validation lag behind, then catch up.
+Here one task is **modular addition**: predict $(a+b)\pmod{p}$ for all pairs $(a,b)$ with a held-out random fraction of pairs for validation. With **weight decay** and long training, you typically see train accuracy climb first and validation lag behind, then catch up.
 
 A second task is **synthetic sequence modeling**: a tiny Transformer learns to **reverse** random strings over a small alphabet (see `grokking_synthetic_lm.py`).
 
@@ -16,34 +16,37 @@ A second task is **synthetic sequence modeling**: a tiny Transformer learns to *
 
 ## Grokfast gradient filter (mechanism)
 
-For each trainable parameter, let \(g_t\) be the gradient tensor after the usual `loss.backward()` at step \(t\). Grokfast **does not** change the loss or the backward pass; it only **rewrites** the tensor the optimizer reads:
+For each trainable parameter, let $g_t$ be the gradient tensor after the usual `loss.backward()` at step $t$. Grokfast **does not** change the loss or the backward pass; it only **rewrites** the tensor the optimizer reads:
 
-\[
-g^{\mathrm{eff}}_t = g_t + \lambda \, s_t
-\]
+$$
+g^{\mathrm{eff}}_{t} = g_t + \lambda\, s_t
+$$
 
-where \(s_t\) is a **smoothed** summary of recent gradients (slow component), and \(\lambda\) is a gain (`lamb` in code). The optimizer then uses \(g^{\mathrm{eff}}_t\) as `p.grad`.
+where $s_t$ is a **smoothed** summary of recent gradients (slow component), and $\lambda$ is a gain (`lamb` in code). The optimizer then uses $g^{\mathrm{eff}}_{t}$ as `p.grad`.
 
-**Intuition:** high-frequency oscillations in \(g_t\) average out in \(s_t\); directions that stay consistent over many steps accumulate. The paper argues that boosting those **slow** directions speeds up the transition from memorization-like fits to rule-like generalization (grokking).
+**Intuition:** high-frequency oscillations in $g_t$ average out in $s_t$; directions that stay consistent over many steps accumulate. The paper argues that boosting those **slow** directions speeds up the transition from memorization-like fits to rule-like generalization (grokking).
 
 ### EMA filter (`gradfilter_ema`)
 
-Maintains one state tensor \(h_t\) per parameter (same shape as \(g_t\)):
+Maintains one state tensor $h_t$ per parameter (same shape as $g_t$):
 
-\[
-h_t = \alpha \, h_{t-1} + (1-\alpha)\, g_t, \qquad
-g^{\mathrm{eff}}_t = g_t + \lambda \, h_t.
-\]
+$$
+h_t = \alpha\, h_{t-1} + (1-\alpha)\, g_t
+$$
 
-With \(\alpha\) close to 1 (default `0.98`), \(h_t\) is a **low-pass** (heavy-tailed exponential moving average) over past gradients. Default \(\lambda = 2\) (`lamb`).
+$$
+g^{\mathrm{eff}}_{t} = g_t + \lambda\, h_t .
+$$
+
+With $\alpha$ close to 1 (default `0.98`), $h_t$ is a **low-pass** (heavy-tailed exponential moving average) over past gradients. Default $\lambda = 2$ (`lamb`).
 
 ### Moving-average filter (`gradfilter_ma`)
 
-Keeps a deque of the last `window_size` gradients \(\{g_{t-W+1},\ldots,g_t\}\). Let \(\bar g_t\) be their **mean** (or **sum** if `filter_type="sum"`). After optional warmup until the deque is full:
+Keeps a deque of the last `window_size` gradients $\{g_{t-W+1},\ldots,g_t\}$. Let $\bar{g}_t$ be their **mean** (or **sum** if `filter_type="sum"`). After optional warmup until the deque is full:
 
-\[
-g^{\mathrm{eff}}_t = g_t + \lambda \, \bar g_t.
-\]
+$$
+g^{\mathrm{eff}}_{t} = g_t + \lambda\, \bar{g}_t .
+$$
 
 This is a **finite-window** low-pass; default `window_size=100`, `lamb=5.0`.
 
