@@ -92,19 +92,39 @@ Other algorithmic targets you can implement the same way: **copy**, **shift**, *
 - **Stop rule:** first epoch with **validation accuracy ≥ 0.99** (otherwise full budget).
 - **Dashboard:** four panels—val vs epoch, val vs *approximate* cumulative wall time (uniform seconds per epoch), bar chart of epochs to stop, bar chart of total wall seconds.
 
-Exact numbers depend on **hardware, PyTorch version, and seed**; the table below matches one successful run on **Apple MPS** (seed **0**).
+Exact numbers depend on **hardware, PyTorch version, and seed**. The table and figures below are from **Apple MPS**, **seed 0**, **Grokfast EMA** (`alpha=0.98`, `lamb=2.0`), Grokking = **no** gradient filter.
 
-## Benchmark results (representative)
+## Benchmark results
 
-Stopping at **val ≥ 0.99**:
+**Metric:** first training epoch where **validation accuracy ≥ 0.99** (modular addition, `--bench-prime`). **Wall time** is total seconds for that run until early stop (includes both train + eval each epoch).
 
-| Modulus `p` | `hidden_dim` | Grokking epochs | Grokfast epochs | Grokking wall (s) | Grokfast wall (s) | Epoch ratio (G/GF) | Wall ratio (G/GF) |
-|-------------|--------------|-----------------|-----------------|-------------------|-------------------|----------------------|-------------------|
-| 59 | 128 | 3654 | 2267 | ~113 | ~72 | ~1.6× | ~1.6× |
-| 79 | 128 | 5628 | 1078 | ~303 | ~60 | ~5.2× | ~5.1× |
-| 97 | 256 | 7210 | 449 | ~553 | ~33 | ~16× | ~17× |
+| Modulus `p` | `hidden_dim` | Grokking epochs | Grokfast epochs | Grokking wall (s) | Grokfast wall (s) | Epoch ratio (G÷GF) | Wall ratio (G÷GF) |
+|-------------|--------------|----------------:|----------------:|------------------:|------------------:|---------------------:|--------------------:|
+| 59 | 128 | 3654 | 2267 | 113.4 | 71.9 | 1.61 | 1.58 |
+| 79 | 128 | 5628 | 1078 | 303.3 | 60.1 | 5.22 | 5.05 |
+| 97 | 256 | 7210 | 449 | 553.2 | 32.5 | 16.06 | 17.02 |
 
-**Takeaway:** as `p` grows, Grokfast’s advantage in **epochs to the same validation bar** (and in **wall time to that bar**, here with early stopping) can become **much larger** than at small `p`, though the right `hidden_dim` and hyperparameters still matter.
+**Takeaway:** Grokfast reaches the same validation bar in **fewer epochs** and, with early stopping, **less wall time**; the gap widens as `p` increases in this setup (with `hidden_dim` scaled up for `p ≥ 97`).
+
+**Reproduce** (writes the dashboard PNG and prints the same style summary):
+
+```bash
+uv run python grokking_modular_addition.py --bench-prime 59 --output benchmark_p59_dashboard.png
+uv run python grokking_modular_addition.py --bench-prime 79 --output benchmark_p79_dashboard.png
+uv run python grokking_modular_addition.py --bench-prime 97 --output benchmark_p97_dashboard.png
+```
+
+### Dashboard figures (in this repo)
+
+| p = 59 | p = 79 |
+|:------:|:------:|
+| ![Benchmark p=59](benchmark_p59_dashboard.png) | ![Benchmark p=79](benchmark_p79_dashboard.png) |
+
+| p = 97 |
+|:------:|
+| ![Benchmark p=97](benchmark_p97_dashboard.png) |
+
+Each figure: **top-left** val vs epoch; **bottom-left** val vs approximate cumulative time; **right** bars for epochs and total wall time to `val ≥ 0.99`.
 
 ## Project layout
 
@@ -114,7 +134,7 @@ Stopping at **val ≥ 0.99**:
 | `grokking_synthetic_lm.py` | Reverse-string task, tiny Transformer, Grokfast hooks. |
 | `grokfast.py` | `gradfilter_ema`, `gradfilter_ma`. |
 
-Pre-generated dashboard images (optional): `benchmark_p59_dashboard.png`, `benchmark_p79_dashboard.png`, `benchmark_p97_dashboard.png`.
+Dashboard PNGs used in [Benchmark results](#benchmark-results): `benchmark_p59_dashboard.png`, `benchmark_p79_dashboard.png`, `benchmark_p97_dashboard.png`.
 
 ## References
 
