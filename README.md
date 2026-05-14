@@ -118,9 +118,9 @@ Pre-generated dashboard images (optional): `benchmark_p59_dashboard.png`, `bench
 
 ## GitHub
 
-This folder is a git repo with `origin` set to **`https://github.com/ll931110again/machine-learning.git`**. The first commit is local; **pushing needs your GitHub login** (this environment has no `gh` CLI and no `GITHUB_TOKEN`).
+This folder is a git repo with `origin` set to **`git@github.com:ll931110again/grokking-modular-addition.git`**. Pushing requires **SSH keys** (or switch the remote to HTTPS and authenticate).
 
-1. In the browser, signed in as [@ll931110again](https://github.com/ll931110again): create a **new empty** repository named **`machine-learning`** (no README / no `.gitignore` from the template, to avoid merge conflicts).
+1. In the browser, signed in as [@ll931110again](https://github.com/ll931110again): create a **new empty** repository named **`grokking-modular-addition`** (no README / no `.gitignore` from the template, to avoid merge conflicts), if you have not already.
 2. From this directory:
 
 ```bash
@@ -131,11 +131,11 @@ git push -u origin main
 Use HTTPS (browser or credential helper) or switch the remote to SSH:
 
 ```bash
-git remote set-url origin git@github.com:ll931110again/machine-learning.git
+git remote set-url origin git@github.com:ll931110again/grokking-modular-addition.git
 git push -u origin main
 ```
 
-If the name **`machine-learning`** is already taken, pick another name on GitHub, then:
+If you use a **different** repository name on GitHub, then:
 
 ```bash
 git remote set-url origin https://github.com/ll931110again/<NEW-REPO-NAME>.git
